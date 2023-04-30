@@ -17,7 +17,7 @@ const connection = new web3.Connection(process.env.RPC_URL as string, {
 router.post('/register', apiKeyProtection, (req, res) => {
   const { reference } = req.body
 
-  if (!reference) return res.send(400).json({ error: "Missing 'reference'" })
+  if (!reference) return res.status(400).json({ error: "Missing 'reference'" })
 
   const publicKey = new web3.PublicKey(reference)
 
@@ -34,5 +34,5 @@ router.post('/register', apiKeyProtection, (req, res) => {
   },
     "confirmed"
   );
-  res.send(200).json({ message: "Successfully registered webhook", reference_account: reference })
+  return res.status(200).json({ message: "Successfully registered webhook", reference_account: reference })
 });
