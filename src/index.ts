@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { json } from 'express';
 import { Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -10,6 +10,7 @@ const app = express();
 const port = process.env.PORT || '8000';
 
 app.use(cors())
+app.use(json())
 app.use("/webhook", webhookRouter)
 
 app.get('/', (req: Request, res: Response) => {

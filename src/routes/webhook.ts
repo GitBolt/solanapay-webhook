@@ -1,63 +1,50 @@
 import express from 'express';
-import WebSocket from 'ws';
 import axios from 'axios';
+import * as web3 from '@solana/web3.js';
+import dotenv from "dotenv"
 
 
 export const router = express.Router();
 
+dotenv.config()
+
+const connection = new web3.Connection(process.env.RPC_URL as string, {
+  wsEndpoint: process.env.WS_URL,
+});
+
 router.post('/register', (req, res) => {
-  const { url } = req.body;
-  registerWebhook(url);
-  res.sendStatus(200);
-});
+  const { reference } = req.body
 
-router.post('/send', (req, res) => {
-  const { message } = req.body;
-  sendWebhook(message);
-  res.sendStatus(200);
-});
+  const publicKey = new web3.PublicKey(reference)
 
-
-
-const registeredWebhooks: string[] = [];
-
-export const registerWebhook = (url: string) => {
-  registeredWebhooks.push(url);
-};
-
-export const sendWebhook = (message: string) => {
-  registeredWebhooks.forEach(async (url) => {
-    try {
-      await axios.post(url, { message });
-    } catch (error) {
-      console.error(`Failed to send webhook to ${url}`, error);
-    }
-  });
-};
-
-const ws = new WebSocket('wss://example.com');
-
-ws.on('open', () => {
-  console.log('WebSocket connected');
-});
-
-ws.on('message', (data: any) => {
-  const payment = JSON.parse(data);
-
-  if (payment.type === 'payment') {
-    const { public_key, amount } = payment;
-
-    // TODO: Check if the payment is valid and send webhook event if it is
-    if (public_key && amount) {
-      sendWebhook(`Payment received: ${amount} from ${public_key}`);
-    }
-  }
-});
-
-ws.on('close', () => {
-  console.log('WebSocket disconnected');
-});
-
-ws.on('error', (error: Error) => {
-  console.error('WebSocket error', error);
+  const id = connection.onAccountChange(publicKey, async (updatedAccountInfo, context) => {
+    console.log("Updated account info: ", updatedAccountInfo)
+    axios.post("https://discord.com/api/webhooks/1102154954359177338/Ot35cV8vBytWkJvdN5CIY_VmDEk1eA1_nKHc0QgdfEcoxL-u189Sd-HdG-AUELR0Q44q",
+      {
+        username: "Change Made",
+        avatar_url: "",
+        content: reference,
+        embeds: [
+          {
+            "title": "Some title",
+            "color": 15258703,
+            "thumbnail": {
+              "url": "",
+            },
+            "fields": [
+              {
+                "name": "Your fields here",
+                "value": "Whatever you wish to send",
+                "inline": true
+              }
+            ]
+          }
+        ]
+      }
+    )
+    await connection.removeAccountChangeListener(id)
+  },
+    "confirmed"
+  );
+  res.send(200).json({ message: "Successfully registered webhook", reference_account: reference })
 });
